@@ -1,4 +1,4 @@
-import math
+from math import comb
 import numpy as np
 
 
@@ -16,13 +16,13 @@ class BezierManager:
         for i in range(self.n - 2):
             level_points = []
             for j in range(len(extra_points[i]) - 1):
-                level_points += t * extra_points[i][j] + (1 - t) * extra_points[i][j + 1]
-            extra_points += level_points
+                level_points += [t * extra_points[i][j] + (1 - t) * extra_points[i][j + 1]]
+            extra_points += [np.array(level_points)]
         extra_points += [self.find_point(t)]
         return extra_points
 
     def find_point(self, t):
         point = np.array([0, 0])
         for i in range(self.n):
-            point += math.comb(i, self.n) * t ** i * (1 - t) ** (self.n - i) * self.points[i]
+            point += math.comb(self.n, i) * t ** i * (1 - t) ** (self.n - i) * self.points[i]
         return point

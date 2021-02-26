@@ -4,6 +4,7 @@ from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout
 from PySide2.QtGui import QPen, QBrush
 from PySide2.QtCore import Qt  # for pen' colors
 import numpy as np
+from bezier_curve import BezierManager
 
 
 WINDOW_HEIGHT = 600
@@ -23,6 +24,7 @@ class SplineWindow(QMainWindow):
         self._create_widgets()
 
     def _create_points(self, num=3):
+        self._points_cnt = num
         self._points = np.zeros([num, 2])
         # set X from 0 to 1
         step = float(1) / num
@@ -34,6 +36,12 @@ class SplineWindow(QMainWindow):
     def _create_widgets(self):
         main_layout = QVBoxLayout(self)
 
+        # init points
+        self._create_points()
+        # init Bezier Manager
+        self._bezier_manager = BezierManager(self._points_cnt)
+        self._bezier_manager.set_points(self._points)
+
         # create plot area
         self._scene = QGraphicsScene(self)
         self._view = QGraphicsView(self._scene, self)
@@ -42,6 +50,11 @@ class SplineWindow(QMainWindow):
         main_layout.addWidget(self._view)
 
         self._plot_axis()
+        # compute & plot bezier lines
+        self._cur_t = 0.5
+        points_list = self._bezier_manager.get_points(self._cur_t)
+        self._plot_bezier_lines(points_list)
+        self._plot_bezier_trace(self._cur_t)
 
         # add everything to the window
         self.setLayout(main_layout)
@@ -60,6 +73,14 @@ class SplineWindow(QMainWindow):
                 self._scene.addLine(points_seq[i][0], points_seq[i][1],
                                     points_seq[i + 1][0], points_seq[i + 1][1])
 
+    def _plot_bezier_trace(self, current_t):
+        pen = QPen(Qt.red)
+        t_net = np.linspace(0, current_t)
+        prev_point = self._bezier_manager.find_point(t_net[0])
+        for k in range(1, len(t_net)):
+            current_point = self._bezier_manager.find_point(t_net[k])
+            self._scene.addLine(prev_point[0], prev_point[1], current_point[0], current_point[1], pen)
+            prev_point = current_point
 
 
 def entry_point():
