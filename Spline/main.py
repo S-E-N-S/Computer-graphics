@@ -6,7 +6,6 @@ from PySide2.QtCore import Qt  # for pen' colors
 import numpy as np
 from bezier_curve import BezierManager
 
-
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
 VIEW_HEIGHT = 300
@@ -69,7 +68,7 @@ class SplineWindow(QMainWindow):
 
     def _plot_bezier_lines(self, points_list):
         for points_seq in points_list:
-            for i in range(len(points_seq) - 1):
+            for i in range(len(points_seq) - 2):
                 self._scene.addLine(points_seq[i][0], points_seq[i][1],
                                     points_seq[i + 1][0], points_seq[i + 1][1])
 

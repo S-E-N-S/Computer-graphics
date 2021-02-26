@@ -24,5 +24,7 @@ class BezierManager:
     def find_point(self, t):
         point = np.array([0, 0])
         for i in range(self.n):
-            point += math.comb(self.n, i) * t ** i * (1 - t) ** (self.n - i) * self.points[i]
+            x = np.array(comb(i, self.n) * t ** i * (1. - t) ** (self.n - i) * self.points[i])
+            point[0] += x[0]
+            point[0] += x[1]
         return point
