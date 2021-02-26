@@ -1,5 +1,4 @@
-# RayTracing
-add refraction to https://gist.github.com/rossant/6046463 
+
 
 # Команда
 1. [Александр Митенев](https://github.com/mitenevav)
