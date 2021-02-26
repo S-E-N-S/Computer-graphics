@@ -13,7 +13,7 @@ class Bezier_manager:
     
     def __init__(self, n=3):
         self.n = n
-        self.points = np.array([[0, 10], [50, 100], [100, 30])
+        self.points = np.array([[0, 10], [50, 100], [100, 30]])
         
     def get_points(self, t):
         extra_points = [points]
