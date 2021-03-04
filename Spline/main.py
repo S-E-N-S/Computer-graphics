@@ -60,7 +60,7 @@ class SplineWindow(QMainWindow):
         self._cur_t = 0.5
         points_list = self._bezier_manager.get_points(self._cur_t)
         self._plot_bezier_lines(points_list)
-        self._plot_bezier_trace(self._cur_t)
+        self._plot_bezier_trace()
 
         # add everything to the window
         central_widget.setLayout(main_layout)
@@ -76,19 +76,19 @@ class SplineWindow(QMainWindow):
 
     def _plot_bezier_lines(self, points_list):
         # create pen
-        pen = QPen(Qt.black)
+        line_width = 3
+        pen = QPen(Qt.black, line_width, Qt.DashLine)
         for points_seq in points_list:
             if len(points_seq) <= 1:
                 # the last-level point
                 break
-            print("\n\n\n")
             for i in range(len(points_seq) - 1):
                 self._add_line(points_seq[i][0], points_seq[i][1],
                                points_seq[i + 1][0], points_seq[i + 1][1], pen)
 
-    def _plot_bezier_trace(self, current_t):
-        pen = QPen(Qt.red)
-        t_net = np.linspace(0, current_t)
+    def _plot_bezier_trace(self):
+        pen = QPen(Qt.red, 3, Qt.SolidLine)
+        t_net = np.linspace(0, self._cur_t, num=100)
         prev_point = self._bezier_manager.find_point(t_net[0])
         for k in range(1, len(t_net)):
             current_point = self._bezier_manager.find_point(t_net[k])
