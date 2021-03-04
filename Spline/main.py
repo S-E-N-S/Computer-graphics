@@ -1,9 +1,8 @@
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide2.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem
-from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout
-from PySide2.QtGui import QPen, QBrush, QColor
+from PySide2.QtWidgets import QGraphicsScene, QGraphicsView
+from PySide2.QtWidgets import QVBoxLayout
+from PySide2.QtGui import QPen, QBrush
 from PySide2.QtCore import Qt  # for pen' colors
-from PySide2.QtCore import QObject, Signal, Slot
 import numpy as np
 from bezier_curve import BezierManager
 from MovableCircle import MovableCircle

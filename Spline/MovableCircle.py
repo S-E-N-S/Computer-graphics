@@ -1,8 +1,7 @@
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide2.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem
+from PySide2.QtWidgets import QMainWindow
+from PySide2.QtWidgets import QGraphicsEllipseItem
 from PySide2.QtGui import QCursor
 from PySide2.QtCore import Qt  # for cursor shapes
-from PySide2.QtCore import QObject, Signal, Slot
 
 
 class MovableCircle(QGraphicsEllipseItem):
