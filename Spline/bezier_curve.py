@@ -18,7 +18,7 @@ class BezierManager:
             for j in range(len(extra_points[i]) - 1):
                 level_points += [t * extra_points[i][j] + (1 - t) * extra_points[i][j + 1]]
             extra_points += [np.array(level_points)]
-        extra_points += [self.find_point(t)]
+        extra_points += [[self.find_point(t)]]
         return extra_points
 
     def find_point(self, t):
