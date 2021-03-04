@@ -1,10 +1,13 @@
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide2.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
+from PySide2.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem
 from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout
-from PySide2.QtGui import QPen, QBrush
+from PySide2.QtGui import QPen, QBrush, QColor
 from PySide2.QtCore import Qt  # for pen' colors
+from PySide2.QtCore import QObject, Signal, Slot
 import numpy as np
 from bezier_curve import BezierManager
+from MovableCircle import MovableCircle
+
 
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
@@ -13,6 +16,8 @@ VIEW_WIDTH = 400
 X_LIM = 5
 Y_LIM = 5
 POINT_COUNT = 3
+POINTS_W = 0.2
+POINTS_H = 0.2
 
 
 class SplineWindow(QMainWindow):
@@ -21,25 +26,52 @@ class SplineWindow(QMainWindow):
         self.setWindowTitle("Bezier Splines by S-E-N-S")
         self.setFixedWidth(WINDOW_WIDTH)
         self.setFixedHeight(WINDOW_HEIGHT)
-        self._create_points(POINT_COUNT)
         self._create_widgets()
 
-    def _create_points(self, num=3):
+    def _create_points(self, num=POINT_COUNT):
         self._points_cnt = num
         self._points = np.zeros([num, 2])
         # set X from 0 to 1
         step = float(1) / num
         # set Y -1 or 1 (avoid init with straight line)
         for i in range(num):
+            # assign values to the points
             self._points[i, 0] = i * step
             self._points[i, 1] = 1 if i % 2 == 0 else -1
+
+    def _create_graphics_support_points(self):
+        self._point_items = []  # container for the points
+        # init pen
+        pen = QPen(Qt.black)
+        # init brush
+        brush = QBrush(Qt.green, Qt.SolidPattern)
+        for i in range(self._points_cnt):
+            # create graphics element
+            new_item = MovableCircle(self,
+                                     self._points[i, 0] * self._x_scale,
+                                     self._points[i, 1] * self._y_scale,
+                                     POINTS_W * self._x_scale,
+                                     POINTS_H * self._y_scale,
+                                     pen,
+                                     brush,
+                                     i,
+                                     lambda point_idx, new_point: self._upd_point_coord(point_idx,
+                                                                                        new_point.x(),
+                                                                                        new_point.y()))
+
+            self._scene.addItem(new_item)
+            self._point_items.append(new_item)
 
     def _create_widgets(self):
         central_widget = QWidget(self)
         main_layout = QVBoxLayout(self)
 
+        # set scale
+        self._x_scale = VIEW_WIDTH / X_LIM
+        self._y_scale = VIEW_HEIGHT / Y_LIM
+
         # init points
-        self._create_points()
+        self._create_points(POINT_COUNT)
         # init Bezier Manager
         self._bezier_manager = BezierManager(self._points_cnt)
         self._bezier_manager.set_points(self._points)
@@ -51,16 +83,15 @@ class SplineWindow(QMainWindow):
         self._view.setFixedWidth(VIEW_WIDTH)
         main_layout.addWidget(self._view)
 
-        # set scale
-        self._x_scale = VIEW_WIDTH / X_LIM
-        self._y_scale = VIEW_HEIGHT / Y_LIM
+        # create movable graphic items for Bezier points
+        self._create_graphics_support_points()
 
-        self._plot_axis()
         # compute & plot bezier lines
         self._cur_t = 0.5
-        points_list = self._bezier_manager.get_points(self._cur_t)
-        self._plot_bezier_lines(points_list)
-        self._plot_bezier_trace()
+        # draw everything
+        self._temporary_lines = []  # storage for the lines on the screen
+        # (when we want to redraw lines, we have to delete the previous lines)
+        self._redraw()  # draw support lines
 
         # add everything to the window
         central_widget.setLayout(main_layout)
@@ -97,8 +128,32 @@ class SplineWindow(QMainWindow):
 
     def _add_line(self, x1, y1, x2, y2, pen):
         # just add line but with scale
-        self._scene.addLine(x1 * self._x_scale, y1 * self._y_scale,
-                            x2 * self._x_scale, y2 * self._y_scale, pen)
+        cur_line = self._scene.addLine(x1 * self._x_scale, y1 * self._y_scale,
+                                       x2 * self._x_scale, y2 * self._y_scale, pen)
+        self._temporary_lines.append(cur_line)
+
+    def _redraw(self):
+        # remove all old unneeded items (old lines)
+        for current_item in self._temporary_lines:
+            self._scene.removeItem(current_item)
+        self._plot_axis()  # draw OX, OY
+        # Compute Bezier support lines
+        points_list = self._bezier_manager.get_points(self._cur_t)
+        # Plot lines
+        self._plot_bezier_lines(points_list)
+        # Plot trace (Bezier curve for t < cur_t)
+        self._plot_bezier_trace()
+
+    def _upd_point_coord(self, point_idx, new_x, new_y):
+        # NOTE: new_x and new_y are scaled (they came as event.pos())
+        # so we need to 'unscale' them
+        x_logic = float(new_x) / self._x_scale
+        y_logic = float(new_y) / self._y_scale
+        # update coordinates in array
+        self._points[point_idx, 0] = x_logic
+        self._points[point_idx, 1] = y_logic
+        # redraw lines
+        self._redraw()
 
 
 def entry_point():
