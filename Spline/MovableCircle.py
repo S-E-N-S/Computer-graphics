@@ -19,14 +19,14 @@ class MovableCircle(QGraphicsEllipseItem):
 
     def mouseMoveEvent(self, event):
         # set position
-        self.setPos(event.pos())
+        self.setPos(self.mapToScene(event.pos()))
+        # commit changes
+        self._upd_callback(self._id_in_list, self.mapToScene(event.pos()))
 
     def mousePressEvent(self, event):
         # change cursor
-        self._main_window.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+        self.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
 
     def mouseReleaseEvent(self, event):
         # change cursor back
-        self._main_window.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        # commit changes
-        self._upd_callback(self._id_in_list, event.pos())
+        self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
