@@ -93,17 +93,16 @@ class SplineWindow(QMainWindow):
         # add everything to the window
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
-        self.slider = TSlider(lambda value:self.changeValue(value),self._cur_t*100 )
+        self.slider = TSlider(lambda value:self.change_value(value), self._cur_t * 100)
         self._scene.addWidget(self.slider)
-        self.slider._add_text(self.toFixed(self._cur_t,2))
+        self.slider.add_text(self.to_fixed(self._cur_t, 2))
 
-
-    def changeValue(self, value):
-        self._cur_t = float(value)/99
+    def change_value(self, value):
+        self._cur_t = float(value) / 99
         self._redraw()
-        self.slider._add_text(self.toFixed(self._cur_t, 2))
+        self.slider.add_text(self.to_fixed(self._cur_t, 2))
 
-    def toFixed(self,numObj, digits=0):
+    def to_fixed(self, numObj, digits=0):
         return f"{numObj:.{digits}f}"
 
     def _plot_axis(self):
@@ -146,15 +145,15 @@ class SplineWindow(QMainWindow):
         self._temporary_lines.append(cur_line)
 
     def _update_lines(self, points_list):
-        j=0
+        line_num = 0
         for points_seq in points_list:
             if len(points_seq) <= 1:
                 # the last-level point
                 break
             for i in range(len(points_seq) - 1):
-                self._temporary_lines[j].setLine(points_seq[i][0], points_seq[i][1],
-                                                 points_seq[i+1][0], points_seq[i+1][1])
-                j+=1
+                self._temporary_lines[line_num].setLine(points_seq[i][0], points_seq[i][1],
+                                                        points_seq[i+1][0], points_seq[i+1][1])
+                line_num += 1
 
     def _update_bezier_lines(self, points_list):
         t_net = np.linspace(0, self._cur_t, num=100)
@@ -165,28 +164,21 @@ class SplineWindow(QMainWindow):
             prev_point = current_point
 
     def _redraw(self):
-        # remove all old unneeded items (old lines)
-
-            # self._scene.removeItem(current_item)
         self._plot_axis()  # draw OX, OY
         # Compute Bezier support lines
         points_list = self._bezier_manager.get_points(self._cur_t)
 
+        # init or update
         if len(self._temporary_lines) == 0:
             self._plot_bezier_lines(points_list)
         else:
             self._update_lines(points_list)
 
-        if len(self._bezier_lines)==0:
+        # init or update
+        if len(self._bezier_lines) == 0:
             self._plot_bezier_trace()
         else:
             self._update_bezier_lines(points_list)
-        
-
-        # Plot lines
-        ## self._plot_bezier_lines(points_list)
-        # Plot trace (Bezier curve for t < cur_t)
-        # self._plot_bezier_trace()
 
     def _upd_point_coord(self, point_idx, new_x, new_y):
         # NOTE: new_x and new_y are scaled (they came as event.pos())
