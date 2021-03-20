@@ -7,6 +7,7 @@ import numpy as np
 from bezier_curve import BezierManager
 from MovableCircle import MovableCircle
 from TSlider import TSlider
+from PointSetter import PointSetter
 
 
 WINDOW_HEIGHT = 600
@@ -18,6 +19,10 @@ POINTS_W = 10
 POINTS_H = 10
 # How many pixels are occupied by one
 ONE_SCALE = 100
+# the minimum number of points
+POINTS_MIN_CNT = 3
+# the maximum number of points
+POINTS_MAX_CNT = 10
 
 
 class SplineWindow(QMainWindow):
@@ -72,11 +77,11 @@ class SplineWindow(QMainWindow):
         central_widget = QWidget(self)
         main_layout = QVBoxLayout(self)
 
-        # init points
-        self._create_points(POINT_COUNT)
         # init Bezier Manager
         self._bezier_manager = BezierManager()
-        self._bezier_manager.set_points(self._points)
+
+        self._temporary_lines = []  # storage for the lines on the screen
+        self._bezier_lines = []
 
         # create plot area
         self._scene = QGraphicsScene(self)
@@ -85,30 +90,48 @@ class SplineWindow(QMainWindow):
         self._view.setFixedWidth(VIEW_WIDTH)
         main_layout.addWidget(self._view)
 
-        # create movable graphic items for Bezier points
-        self._create_graphics_support_points()
-
-        # compute & plot bezier lines
-        self._cur_t = 1
-        # draw everything
-        self._temporary_lines = []  # storage for the lines on the screen
-        self._bezier_lines = []
-        # (when we want to redraw lines, we have to delete the previous lines)
-        self._redraw()  # draw support lines
+        self._create_and_draw_points(POINT_COUNT)
 
         # add everything to the window
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
-        self.slider = TSlider(lambda value:self.change_value(value), self._cur_t * 100)
+        self.slider = TSlider(lambda value: self.change_t_value(value), self._cur_t * 100)
         self._scene.addWidget(self.slider)
-        self.slider.add_text(self.to_fixed(self._cur_t, 2))
+        self.slider.add_text(SplineWindow._to_fixed(self._cur_t, 2))
+        inc_callback = lambda new_point_val: self._create_and_draw_points(new_point_val)
+        dec_callback = lambda new_point_val: self._create_and_draw_points(new_point_val)
+        self.point_setter = PointSetter(inc_callback, dec_callback, self._points_cnt,
+                                        POINTS_MIN_CNT, POINTS_MAX_CNT)
+        main_layout.addWidget(self.point_setter)
 
-    def change_value(self, value):
+    def _create_and_draw_points(self, points_count):
+        # (when we want to redraw lines, we have to delete the previous lines)
+        self._clear_prev_points()
+        # init points
+        self._create_points(points_count)
+        self._bezier_manager.set_points(self._points)
+        # create movable graphic items for Bezier points
+        self._create_graphics_support_points()
+        # compute & plot bezier lines
+        self._cur_t = 1
+        # draw everything
+        self._redraw()  # draw support lines
+
+    def _clear_prev_points(self):
+        for cur_line in self._temporary_lines:
+            self._scene.removeItem(cur_line)
+        for cur_line in self._bezier_lines:
+            self._scene.removeItem(cur_line)
+        self._temporary_lines.clear()
+        self._bezier_lines.clear()
+
+    def change_t_value(self, value):
         self._cur_t = float(value) / 99
         self._redraw()
-        self.slider.add_text(self.to_fixed(self._cur_t, 2))
+        self.slider.add_text(SplineWindow._to_fixed(self._cur_t, 2))
 
-    def to_fixed(self, numObj, digits=0):
+    @staticmethod
+    def _to_fixed(numObj, digits=0):
         return f"{numObj:.{digits}f}"
 
     def _plot_axis(self):
