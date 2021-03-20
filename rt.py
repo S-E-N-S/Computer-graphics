@@ -177,13 +177,15 @@ def find_refracted(N, M, rayO, rayD, refraction):
     rayO_refracted = M - normal * NORM_BIAS_SCALE
     # find sin (sin^2 + cos^2 = 1)
     # cos is dot product
-    fall_sin = (1 - np.dot(rayD, normal) ** 2) ** 0.5
+    fall_cos = - np.dot(rayD, normal)
+    fall_sin = (1 - fall_cos ** 2) ** 0.5
     refraction_sin = fall_sin / refraction
     refraction_cos = (1 - refraction_sin ** 2) ** 0.5
-    refraction_tg =  refraction_sin / refraction_cos
-    surf_dir = normal * np.dot(rayD, normal) + rayD
+    refraction_tg = refraction_sin / refraction_cos
+    surf_dir = normalize(normal * fall_cos + rayD)
     rayD_refracted = normalize(-normal + surf_dir * refraction_tg)
     return rayO_refracted, rayD_refracted
+    #return rayO_refracted, rayD
 
 
 def cast_ray(rayO, rayD, reflection, depth=0):
@@ -199,7 +201,7 @@ def cast_ray(rayO, rayD, reflection, depth=0):
         return ray_sum
     obj, M, N, col_ray = traced
     # Reflection: create a new ray.
-    rayO, rayD = M + N * NORM_BIAS_SCALE, normalize(rayD - 2 * np.dot(rayD, N) * N)
+    rayO_reflected, rayD_reflected = M + N * NORM_BIAS_SCALE, normalize(rayD - 2 * np.dot(rayD, N) * N)
     refraction = get_refraction(obj)
     if refraction is not None:
         # find refracted rays
@@ -210,7 +212,7 @@ def cast_ray(rayO, rayD, reflection, depth=0):
     # rayD -- new ray direction
     # col += reflection * col_ray
     reflection *= obj.get('reflection', 1.0)
-    ray_sum += cast_ray(rayO, rayD, reflection, depth + 1)
+    ray_sum += cast_ray(rayO_reflected, rayD_reflected, reflection, depth + 1)
     return ray_sum + reflection * col_ray
 
 
@@ -219,7 +221,7 @@ color_plane0 = 1.0 * np.ones(RGB_DIM)
 color_plane1 = 0.0 * np.ones(RGB_DIM)
 scene = [add_sphere([0.75, 0.1, 1.0], 0.6, [0.0, 0.0, 1.0]),
          add_transparent_sphere(position=[-0.75, 0.1, 2.25], radius=0.6, 
-            color=[0.5, 0.223, 0.5], refraction=1),
+            color=[0.5, 0.223, 0.5], refraction=1.),
          add_sphere(position=[-0.75, 0.1, 5.0], radius=0.7, color=[0.8, 0.2, 0.0]),
          add_sphere([-2.75, 0.1, 3.5], 0.6, [1.0, 0.572, 0.184]),
          add_plane([0.0, -0.5, 0.0], [0.0, 1.0, 0.0]),
