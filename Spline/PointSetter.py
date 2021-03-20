@@ -9,8 +9,8 @@ class PointSetter(QWidget):
         self._label = QLabel("Add/Remove points")
         self._button_holder = QWidget()
         button_holder_layout = QHBoxLayout()
-        self._button_plus = QPushButton("+1")
-        self._button_minus = QPushButton("-1")
+        self._button_minus = QPushButton("-", self)
+        self._button_plus = QPushButton("+", self)
         self._inc_callback = inc_callback
         self._dec_callback = dec_callback
         self._min_value = min_value
@@ -22,22 +22,36 @@ class PointSetter(QWidget):
         button_holder_layout.addWidget(self._button_plus)
         button_holder_layout.addWidget(self._button_minus)
         self._button_holder.setLayout(button_holder_layout)
+        self.setLayout(layout)
 
     def _connect_buttons(self):
+        # decorate callbacks
         def button_minus_block():
-            if self._cur_value - 1 <= self._min_value:
-                self._button_minus.setDisabled(True)
-            else:
-                self._button_minus.setEnabled(True)
+            # calls each time user clicks "-1" button
+            if self._cur_value >= self._min_value:
+                # can decrement point count
                 self._cur_value -= 1
                 self._dec_callback(self._cur_value)
+                # disable button if the limit reached
+                if self._cur_value <= self._min_value:
+                    self._button_minus.setDisabled(True)
+                self._button_plus.setEnabled(True)
+            else:
+                # can't decrement point count
+                pass
 
         def button_plus_block():
-            if self._cur_value + 1 >= self._max_value:
-                self._button_plus.setDisabled(True)
-            else:
-                self._button_plus.setEnabled(True)
+            if self._cur_value <= self._max_value:
+                # can increment point count
                 self._cur_value += 1
                 self._inc_callback(self._cur_value)
+                # disable button if the limit reached
+                if self._cur_value >= self._max_value:
+                    self._button_plus.setDisabled(True)
+                self._button_minus.setEnabled(True)
+            else:
+                # can't increment point count
+                pass
+
         self._button_plus.clicked.connect(button_plus_block)
         self._button_minus.clicked.connect(button_minus_block)
