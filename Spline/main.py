@@ -23,6 +23,12 @@ ONE_SCALE = 100
 class SplineWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # colors for bezier support lines
+        self._color_list = [
+            Qt.black, Qt.blue, Qt.green,
+            Qt.darkYellow, Qt.darkGreen,
+            Qt.magenta, Qt.cyan
+        ]
         self.setWindowTitle("Bezier Splines by S-E-N-S")
         self.setFixedWidth(WINDOW_WIDTH)
         self.setFixedHeight(WINDOW_HEIGHT)
@@ -117,10 +123,12 @@ class SplineWindow(QMainWindow):
         # create pen
         line_width = 3
         pen = QPen(Qt.black, line_width, Qt.DashLine)
-        for points_seq in points_list:
+        for line_order_num, points_seq in enumerate(points_list):
             if len(points_seq) <= 1:
                 # the last-level point
                 break
+            # change color for the next support lines
+            pen.setColor(self._color_list[line_order_num % len(self._color_list)])
             for i in range(len(points_seq) - 1):
                 self._add_line(points_seq[i][0], points_seq[i][1],
                                points_seq[i + 1][0], points_seq[i + 1][1], pen)
