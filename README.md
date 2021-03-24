@@ -5,4 +5,4 @@ add refraction to https://gist.github.com/rossant/6046463
 
 The result of the refraction:
 
-![refraction result](https://github.com/S-E-N-S/Computer-graphics/tree/ray-traycing/fig.png)
+![refraction result](https://github.com/S-E-N-S/Computer-graphics/tree/ray-traycing/fig.png?raw=true)
