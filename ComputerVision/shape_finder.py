@@ -1,4 +1,3 @@
-import os, sys
 import argparse
 import cv2
 import numpy as np
@@ -85,7 +84,7 @@ def get_sides(figure):
 
 
 def find_objects(patterns, polygons):
-    obgects = []
+    objects = []
     for polygon in polygons:
         poly_sides = get_sides(polygon)
         match_error = np.inf
@@ -125,13 +124,13 @@ def find_objects(patterns, polygons):
                             pattern_num, min_shift_x, min_shift_y, min_scale, min_rotation = j, shift_x, shift_y, scale, rotation
 
         if match_error < np.inf:
-            obgects.append([pattern_num,
+            objects.append([pattern_num,
                             min_shift_x,
                             min_shift_y,
                             min_scale,
                             min_rotation])
 
-    return np.round(obgects).astype(int)
+    return np.round(objects).astype(int)
 
 
 def main():
@@ -153,8 +152,8 @@ def main():
     objects = find_objects(patterns, polygons)
 
     print(objects.shape[0])
-    for object in objects:
-        print(*object, sep=', ')
+    for obj in objects:
+        print(*obj, sep=', ')
 
 
 if __name__ == "__main__":
