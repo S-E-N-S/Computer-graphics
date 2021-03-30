@@ -1,3 +1,4 @@
+import sys
 import argparse
 import cv2
 import numpy as np
@@ -139,6 +140,7 @@ def main():
 
     parser.add_argument('-s', type=str, default="input.txt", dest="patterns_file_name", help="the input file name")
     parser.add_argument('-i', type=str, default="image.png", dest="image_name", help="the image file name")
+    parser.add_argument('-o', type=str, default="", dest="outfile", help="the output file name")
 
     # parse command line arguments
     parsed_args = parser.parse_args()
@@ -151,9 +153,18 @@ def main():
 
     objects = find_objects(patterns, polygons)
 
-    print(objects.shape[0])
+    outfile = sys.stdout
+    if parsed_args.outfile != "":
+        outfile = open(parsed_args.outfile, 'w')
+        need_close = True
+    else:
+        need_close = False
+
+    print(objects.shape[0], file=outfile)
     for obj in objects:
-        print(*obj, sep=', ')
+        print(*obj, sep=', ', file=outfile)
+    if need_close:
+        outfile.close()
 
 
 if __name__ == "__main__":
