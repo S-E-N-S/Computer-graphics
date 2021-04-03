@@ -14,7 +14,7 @@ class TSlider(QWidget):
     def add_text(self, t):
         self.label.setText(f't = {t}')
 
-    def set_value(self, new_value):
+    def set_value_int(self, new_value):
         self._sld.setValue(new_value)
 
     def set_value_float(self, new_value):
