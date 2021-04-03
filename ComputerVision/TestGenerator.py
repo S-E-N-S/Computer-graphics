@@ -40,8 +40,12 @@ def get_shapes():
     triangle_2 = np.array([[0, 0],
                            [2, 1],
                            [1, 0]])
+    square = np.array([[0, 0],
+                       [0, 1],
+                       [1, 1],
+                       [1, 0]])
 
-    return [triangle_1, triangle_2]
+    return [triangle_1, triangle_2, square]
 
 
 def get_transforms(im_shape, h_cnt, w_cnt):

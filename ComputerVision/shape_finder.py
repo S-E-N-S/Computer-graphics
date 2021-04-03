@@ -20,7 +20,7 @@ def read_patterns(patterns_file_name):
 
             patterns.append(pattern_vtxes)
 
-        return patterns
+    return patterns
 
 
 def get_polygons(image):
