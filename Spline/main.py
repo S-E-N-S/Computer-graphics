@@ -1,13 +1,14 @@
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
 from PySide2.QtWidgets import QGraphicsScene, QGraphicsView
-from PySide2.QtWidgets import QVBoxLayout, QGraphicsEllipseItem
+from PySide2.QtWidgets import QVBoxLayout, QGraphicsEllipseItem, QPushButton
 from PySide2.QtGui import QPen, QBrush
-from PySide2.QtCore import Qt  # for pen' colors
+from PySide2.QtCore import Qt, QTimer
 import numpy as np
 from bezier_curve import BezierManager
 from MovableCircle import MovableCircle
 from TSlider import TSlider
 from PointSetter import PointSetter
+from PySide2.QtGui import QCursor
 
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 1300
@@ -24,6 +25,7 @@ POINTS_MIN_CNT = 3
 POINTS_MAX_CNT = 10
 SLIDER_SCALE = 100
 AX_TUNE = 30
+DT_ANIMATION = 100
 
 
 class SplineWindow(QMainWindow):
@@ -40,6 +42,33 @@ class SplineWindow(QMainWindow):
         self.setFixedWidth(WINDOW_WIDTH)
         self.setFixedHeight(WINDOW_HEIGHT)
         self._create_widgets()
+        self.active_mode = False
+
+    def mousePressEvent(self, event):
+        if not self.active_mode:
+            return
+
+        pos = self._view.mapToScene(self._view.mapFromParent(event.pos()))
+
+        points = list(self._points)
+        points.append([pos.x(),
+                       pos.y()])
+
+        self._points = np.array(points)
+
+        self._points_cnt += 1
+
+        self._clear_prev_points()
+        # init points
+        self._bezier_manager.set_points(self._points)
+        # create movable graphic items for Bezier points
+        self._create_graphics_support_points()
+        # draw everything
+        self._redraw()
+        self.active_mode = False
+        if self.point_setter.can_unblock_plus():
+            self.point_setter.button_plus.setEnabled(True)
+        self.point_setter.button_minus.setEnabled(True)
 
     def _create_points(self, num=POINT_COUNT):
         self._points_cnt = num
@@ -102,24 +131,80 @@ class SplineWindow(QMainWindow):
         # add everything to the window
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
-        slider_obj = self.slider = TSlider(lambda value: self.change_t_value(value), self._cur_t * 100)
+        slider_obj = self.slider = TSlider(lambda value: self.change_t_value(value), self._cur_t * 100, SLIDER_SCALE)
         self._scene.addWidget(self.slider)
         self.slider.add_text(SplineWindow._to_fixed(self._cur_t, 2))
 
         # define callbacks for point change buttons
-        def inc_callback(new_point_val):
-            self._create_and_draw_points(new_point_val)
-            self.slider.set_value(SLIDER_SCALE)
+        def inc_callback():
+            self.active_mode = True
+            self._view.viewport().setCursor(Qt.CursorShape.CrossCursor)
 
-        def dec_callback(new_point_val):
-            self._create_and_draw_points(new_point_val)
-            self.slider.set_value(SLIDER_SCALE)
+        def dec_callback():
+            points = list(self._points)
+            points.pop()
+            self._points = np.array(points)
+
+            self._points_cnt -= 1
+
+            self._clear_prev_points()
+            # init points
+            self._bezier_manager.set_points(self._points)
+            # create movable graphic items for Bezier points
+            self._create_graphics_support_points()
+            # draw everything
+            self._redraw()
 
         self.point_setter = PointSetter(inc_callback, dec_callback, self._points_cnt,
                                         POINTS_MIN_CNT, POINTS_MAX_CNT)
         self.point_setter.setFixedWidth(slider_obj.width())
         point_setter_obj = self._scene.addWidget(self.point_setter)
         point_setter_obj.setPos(0, slider_obj.height())
+
+        # add animation button
+        self._play_button = QPushButton("Play")
+        self._play_active = False
+        self._play_timer = QTimer()
+        self._play_timer.setInterval(DT_ANIMATION)
+        self._play_direction = 1
+
+        def play_timer_slot():
+            dt = 0.05
+            self._cur_t += dt * self._play_direction
+            if self._cur_t >= 1:
+                self._cur_t = 1
+                self._play_direction = -self._play_direction
+            if self._cur_t <= 0:
+                self._cur_t = 0
+                self._play_direction = -self._play_direction
+            self._redraw()
+            self.slider.set_value_float(self._cur_t)
+            self.slider.add_text(SplineWindow._to_fixed(self._cur_t, 2))
+
+        self._play_timer.timeout.connect(play_timer_slot)
+
+        def play_button_slot():
+            self._play_active = not self._play_active
+            if self._play_active:
+                self._play_button.setText("Stop")
+                self._play_timer.start()
+            else:
+                self._play_button.setText("Play")
+                self._play_timer.stop()
+
+        self._play_button.clicked.connect(play_button_slot)
+
+        play_button_obj = self._scene.addWidget(self._play_button)
+        play_button_obj.setPos(slider_obj.width(), 0)
+
+    def _add_and_draw_points(self, points_count):
+        self._bezier_manager.set_points(self._points)
+        # create movable graphic items for Bezier points
+        self._create_graphics_support_points()
+        # compute & plot bezier lines
+        self._cur_t = 1
+        # draw everything
+        self._redraw()  # draw support lines
 
     def _create_and_draw_points(self, points_count):
         # (when we want to redraw lines, we have to delete the previous lines)
@@ -147,7 +232,7 @@ class SplineWindow(QMainWindow):
             self._scene.removeItem(cur_movable_point)
         self._temporary_lines.clear()
         self._bezier_lines.clear()
-        self._point_items.clear()
+        #self._point_items.clear()
 
     def change_t_value(self, value):
         self._cur_t = float(value) / (SLIDER_SCALE - 1)
@@ -217,13 +302,17 @@ class SplineWindow(QMainWindow):
                                                         points_seq[i + 1][0], points_seq[i + 1][1])
                 line_num += 1
 
-    def _update_bezier_lines(self, points_list):
+    def _update_bezier_lines(self):
         t_net = np.linspace(0, 1, num=100)
         prev_point = self._bezier_manager.find_point(t_net[0])
         for k in range(1, len(t_net)):
             current_point = self._bezier_manager.find_point(t_net[k])
             self._bezier_lines[k - 1].setLine(prev_point[0], prev_point[1], current_point[0], current_point[1])
             prev_point = current_point
+
+    def _update_points(self):
+        for i, point in enumerate(self._point_items):
+            point.setPos(self._points[i, 0], self._points[i, 1])
 
     def _redraw(self):
         self._plot_axis()  # draw OX, OY
@@ -240,9 +329,11 @@ class SplineWindow(QMainWindow):
         if len(self._bezier_lines) == 0:
             self._plot_bezier_trace()
         else:
-            self._update_bezier_lines(points_list)
+            self._update_bezier_lines()
 
         self._move_bezier_point()
+
+        self._update_points()
 
     def _upd_point_coord(self, point_idx, new_x, new_y):
         # NOTE: new_x and new_y are scaled (they came as event.pos())

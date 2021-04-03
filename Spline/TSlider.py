@@ -3,9 +3,10 @@ from PySide2.QtCore import Qt  # for cursor shapes
 
 
 class TSlider(QWidget):
-    def __init__(self, update_callback, value):
+    def __init__(self, update_callback, value, slider_scale):
         super().__init__()
         layout = QVBoxLayout(self)
+        self._scale = slider_scale
         self._init_label(layout)
         self._init_slider(update_callback, layout, value)
         self.setLayout(layout)
@@ -15,6 +16,9 @@ class TSlider(QWidget):
 
     def set_value(self, new_value):
         self._sld.setValue(new_value)
+
+    def set_value_float(self, new_value):
+        self._sld.setValue(new_value * self._scale)
 
     def _init_slider(self, update_callback, layout, value):
         self._sld = QSlider(Qt.Horizontal, self)

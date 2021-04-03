@@ -18,8 +18,6 @@ class MovableCircle(QGraphicsEllipseItem):
         self._upd_callback = update_callback
 
     def mouseMoveEvent(self, event):
-        # set position
-        self.setPos(self.mapToScene(event.pos()))
         # commit changes
         self._upd_callback(self._id_in_list, self.mapToScene(event.pos()))
 
