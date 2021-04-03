@@ -37,3 +37,15 @@ $ python shape_finder.py -s in.txt -i in_image.png -o ans.txt
 
 Выходные данные сравнимы с the ground truth с точностью до перестановки
 строк, соответствующих паттернам (фигурам).
+
+Для вычисления точности результата можно использовать `TestMetrics.py`:
+
+```
+$ python TestMetrics.py -s in.txt -a ans.txt -g in_image_gt.png
+```
+
+В качестве результата будет выведено значение метрики `Intersection Over Union` для
+картинки `in_image_gt.png` и картинки, которая соответствует предсказанию алгоритма
+(она строится в процессе работы `TestMetrics.py` по шаблонам из `in.txt` и
+предсказаниям алгоритма `ans.txt`).
+
