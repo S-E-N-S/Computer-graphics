@@ -27,7 +27,7 @@ def read_answers(output_file):
                                       'dx': figures_param_list[1],
                                       'dy': figures_param_list[2],
                                       'scale': figures_param_list[3],
-                                      'rotation': figures_param_list[4]
+                                      'angle': figures_param_list[4]
                                   })))
 
     return figures_params
