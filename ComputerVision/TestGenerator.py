@@ -61,7 +61,7 @@ def get_transforms(im_shape, h_cnt, w_cnt):
             dx, dy = np.random.uniform(low=[shift_w + step_w * cur_w + scale, shift_h + step_h * cur_h + scale],
                                        high=[shift_w + step_w * (cur_w + 1) - scale, shift_h + step_h
                                              * (cur_h + 1) - scale])
-            angle = np.random.uniform(low=0, high=359)
+            angle = np.random.uniform(low=0, high=179)
             transform = {
                 'scale': scale,
                 'angle': angle,
@@ -77,7 +77,7 @@ def generate_image(outfile, outfile_txt, infile_txt):
     ground_truth = input_img.copy()
     shapes = get_shapes()
     worklist = []  # output.txt ground truth
-    for transform in get_transforms(im_shape, 2, 3):
+    for transform in get_transforms(im_shape, 1, 1):
         cur_shape = int(np.round(np.random.uniform(low=0, high=len(shapes) - 1)))
         draw(input_img, ground_truth, shapes[cur_shape], Transform(transform))
         worklist.append([cur_shape, transform['dx'], transform['dy'], transform['scale'],
@@ -101,7 +101,7 @@ def generate_image(outfile, outfile_txt, infile_txt):
 
 
 def main():
-    generate_image('in_image', 'out.txt', 'in.txt')
+    generate_image('in_image', 'out_gen.txt', 'in.txt')
 
 
 if __name__ == "__main__":

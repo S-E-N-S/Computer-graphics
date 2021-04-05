@@ -2,6 +2,7 @@ import sys
 import argparse
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 EPSILON = 2e-2
 
@@ -13,10 +14,12 @@ def read_patterns(patterns_file_name):
         for i in range(num_patterns):
             pattern_coords = list(map(int, patterns_file.readline().split(', ')))
 
-            pattern_vtxes = np.array(pattern_coords).reshape((-1, 2))
+            pattern_vtxes = np.flip(np.array(pattern_coords).reshape((-1, 2)), axis=1)
+            # pattern_vtxes = np.array(pattern_coords).reshape((-1, 2))
 
             if cv2.contourArea(pattern_vtxes, True) < 0:
                 pattern_vtxes = pattern_vtxes[::-1]
+                pattern_vtxes = np.roll(pattern_vtxes, 1, 0)
 
             patterns.append(pattern_vtxes)
 
@@ -24,13 +27,18 @@ def read_patterns(patterns_file_name):
 
 
 def get_polygons(image):
-    contours, hierarchy = cv2.findContours(image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = np.array(contours)
 
     polygons = []
     for contour in contours:
         polygon = cv2.approxPolyDP(contour, EPSILON * cv2.arcLength(contour, True), True)
-        polygons.append(np.squeeze(polygon, 1))
+        polygon = np.squeeze(polygon, 1)
+        if cv2.contourArea(polygon, True) < 0:
+            polygon = polygon[::-1]
+
+        polygons.append(polygon)
+
     return polygons
 
 
@@ -57,7 +65,7 @@ def find_shift(polygon, pattern, scale, rotation):
 
 
 def find_max_error(polygon, pattern, scale, rotation, shift_x, shift_y):
-    rotation = -rotation / 180 * np.pi
+    rotation = rotation / 180 * np.pi
     max_error = 0
 
     for polygon_vtx, pattern_vtx in zip(polygon, pattern):
@@ -92,43 +100,39 @@ def find_objects(patterns, polygons):
         for j, pattern in enumerate(patterns):
             pattern_sides = get_sides(pattern)
             if polygon.shape[0] == pattern.shape[0]:
-
                 # find possible match of pattern/polygon
                 possible_match = []
-                pattern_copy = pattern.copy()
-                for _ in range(polygon.shape[0]):
-                    if np.linalg.norm(pattern_sides - poly_sides) < EPSILON:
-                        possible_match.append(polygon.copy())
+                sides = poly_sides.copy()
+                polygon_copy = polygon.copy()
+                for _ in range(polygon_copy.shape[0]):
+                    if np.linalg.norm(pattern_sides - sides) < EPSILON:
+                        possible_match.append(polygon_copy.copy())
                         break
-                    pattern_sides = np.roll(pattern_sides, 1, 0)
-                    pattern_copy = np.roll(pattern_copy, 1, 0)
+                    sides = np.roll(sides, 1, 0)
+                    polygon_copy = np.roll(polygon_copy, 1, 0)
 
-                for match in possible_match:
-                    scale = np.round(np.sqrt(cv2.contourArea(match) / cv2.contourArea(pattern_copy))).astype(int)
-                    angles = np.round(get_angle(match, pattern_copy)).astype(int)
+                scale = np.round(np.sqrt(cv2.contourArea(polygon_copy) / cv2.contourArea(pattern))).astype(int)
+                angles = np.round(get_angle(polygon_copy, pattern)).astype(int)
 
-                    for rotation in angles:
-                        shift_x, shift_y = np.round(find_shift(match,
-                                                               pattern_copy,
-                                                               scale,
-                                                               rotation)
-                                                    ).astype(int)
+                shift_x, shift_y = polygon_copy[0]
+                pattern_num = j
 
-                        max_match_error = find_max_error(match,
-                                                         pattern_copy,
-                                                         scale,
-                                                         rotation,
-                                                         shift_x,
-                                                         shift_y)
-                        if max_match_error < match_error:
-                            match_error = max_match_error
-                            pattern_num, min_shift_x, min_shift_y, min_scale, min_rotation = j, shift_x, shift_y, scale, rotation
+                for rotation in angles:
+                    max_match_error = find_max_error(polygon_copy,
+                                                     pattern,
+                                                     scale,
+                                                     rotation,
+                                                     shift_x,
+                                                     shift_y)
+                    if max_match_error < match_error:
+                        match_error = max_match_error
+                        min_rotation = rotation
 
         if match_error < np.inf:
             objects.append([pattern_num,
-                            min_shift_x,
-                            min_shift_y,
-                            min_scale,
+                            shift_x,
+                            shift_y,
+                            scale,
                             min_rotation])
 
     return np.round(objects).astype(int)
@@ -138,9 +142,9 @@ def main():
     # define command line arguments
     parser = argparse.ArgumentParser(description="shape_finder", add_help=True)
 
-    parser.add_argument('-s', type=str, default="input.txt", dest="patterns_file_name", help="the input file name")
-    parser.add_argument('-i', type=str, default="image.png", dest="image_name", help="the image file name")
-    parser.add_argument('-o', type=str, default="", dest="outfile", help="the output file name")
+    parser.add_argument('-s', type=str, default="000_line_in.txt", dest="patterns_file_name", help="the input file name")
+    parser.add_argument('-i', type=str, default="000_pure_src.png", dest="image_name", help="the image file name")
+    parser.add_argument('-o', type=str, default="out.txt", dest="outfile", help="the output file name")
 
     # parse command line arguments
     parsed_args = parser.parse_args()
@@ -165,6 +169,9 @@ def main():
         print(*obj, sep=', ', file=outfile)
     if need_close:
         outfile.close()
+
+    plt.imshow(image)
+    plt.show()
 
 
 if __name__ == "__main__":

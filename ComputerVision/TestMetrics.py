@@ -49,7 +49,7 @@ def draw_result(input_file, output_file):
         tmp = new_shape.copy()
         for i in [0, 1]:
             new_shape[:, i] = np.cos(transform.angle) * tmp[:, i] \
-                              - ((-1) ** i) * np.sin(transform.angle) * tmp[:, 1 - i]
+                              - ((-1) ** i) * np.sin(transform.angle) * tmp[:, i-1]
 
         # Shift
         new_shape[:, 0] += transform.dx
@@ -64,9 +64,9 @@ def main():
     # define command line arguments
     parser = argparse.ArgumentParser(description="shape_finder", add_help=True)
 
-    parser.add_argument('-s', type=str, default="input.txt", dest="patterns_file_name", help="patterns")
-    parser.add_argument('-a', type=str, default="output.txt", dest="model_ans_file", help="the answers of the model")
-    parser.add_argument('-g', type=str, default="im_gt.png", dest="ground_truth", help="the ground truth image")
+    parser.add_argument('-s', type=str, default="000_line_in.txt", dest="patterns_file_name", help="patterns")
+    parser.add_argument('-a', type=str, default="out.txt", dest="model_ans_file", help="the answers of the model")
+    parser.add_argument('-g', type=str, default="000_line_gt.png", dest="ground_truth", help="the ground truth image")
 
     # parse command line arguments
     parsed_args = parser.parse_args()
