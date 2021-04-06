@@ -140,7 +140,7 @@ def main():
 
     parser.add_argument('-s', type=str, default="000_line_in.txt", dest="patterns_file_name", help="the input file name")
     parser.add_argument('-i', type=str, default="000_pure_src.png", dest="image_name", help="the image file name")
-    parser.add_argument('-o', type=str, default="out.txt", dest="outfile", help="the output file name")
+    parser.add_argument('-o', type=str, default="", dest="outfile", help="the output file name")
 
     # parse command line arguments
     parsed_args = parser.parse_args()
