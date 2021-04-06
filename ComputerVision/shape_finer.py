@@ -136,7 +136,7 @@ def find_objects(patterns, polygons, orient):
 
 def main():
     # define command line arguments
-    parser = argparse.ArgumentParser(description="shape_finder", add_help=True)
+    parser = argparse.ArgumentParser(description="shape_finer", add_help=True)
 
     parser.add_argument('-s', type=str, default="000_line_in.txt", dest="patterns_file_name", help="the input file name")
     parser.add_argument('-i', type=str, default="000_pure_src.png", dest="image_name", help="the image file name")

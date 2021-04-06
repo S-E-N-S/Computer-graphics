@@ -23,7 +23,7 @@ $ python TestGenerator.py
 Запуск самой программы поиска шаблонов:
 
 ```
-$ python shape_finder.py -s in.txt -i in_image.png
+$ python shape_finer.py -s in.txt -i in_image.png
 ```
 
 С помощью опции `-s` задаётся путь до входного текствого файла, с помощью
@@ -32,7 +32,7 @@ $ python shape_finder.py -s in.txt -i in_image.png
 если хотим получить файл `ans.txt` 
 
 ```
-$ python shape_finder.py -s in.txt -i in_image.png -o ans.txt
+$ python shape_finer.py -s in.txt -i in_image.png -o ans.txt
 ```
 
 Выходные данные сравнимы с the ground truth с точностью до перестановки

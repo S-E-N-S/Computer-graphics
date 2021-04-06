@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-#from shape_finder import read_patterns
+#from shape_finer import read_patterns
 from TestGenerator import Transform
 import cv2
 from matplotlib import pyplot as plt
@@ -75,7 +75,7 @@ def draw_result(input_file, output_file):
 
 def main():
     # define command line arguments
-    parser = argparse.ArgumentParser(description="shape_finder", add_help=True)
+    parser = argparse.ArgumentParser(description="shape_finer_test", add_help=True)
 
     parser.add_argument('-s', type=str, default="000_line_in.txt", dest="patterns_file_name", help="patterns")
     parser.add_argument('-a', type=str, default="out.txt", dest="model_ans_file", help="the answers of the model")
