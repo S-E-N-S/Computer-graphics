@@ -2,7 +2,6 @@ import sys
 import argparse
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 EPSILON = 2e-2
 
@@ -138,8 +137,8 @@ def main():
     # define command line arguments
     parser = argparse.ArgumentParser(description="shape_finer", add_help=True)
 
-    parser.add_argument('-s', type=str, default="000_line_in.txt", dest="patterns_file_name", help="the input file name")
-    parser.add_argument('-i', type=str, default="000_pure_src.png", dest="image_name", help="the image file name")
+    parser.add_argument('-s', type=str, default="input.txt", dest="patterns_file_name", help="the input file name")
+    parser.add_argument('-i', type=str, default="image.png", dest="image_name", help="the image file name")
     parser.add_argument('-o', type=str, default="out.txt", dest="outfile", help="the output file name")
 
     # parse command line arguments
@@ -165,9 +164,6 @@ def main():
         print(*obj, sep=', ', file=outfile)
     if need_close:
         outfile.close()
-
-    plt.imshow(image)
-    plt.show()
 
 
 if __name__ == "__main__":
