@@ -2,7 +2,6 @@ import sys
 import argparse
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 EPSILON = 2e-2
 
@@ -165,9 +164,6 @@ def main():
         print(*obj, sep=', ', file=outfile)
     if need_close:
         outfile.close()
-
-    plt.imshow(image)
-    plt.show()
 
 
 if __name__ == "__main__":
