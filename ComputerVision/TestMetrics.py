@@ -1,9 +1,22 @@
 import argparse
 import numpy as np
-from shape_finder import read_patterns
+#from shape_finder import read_patterns
 from TestGenerator import Transform
 import cv2
 from matplotlib import pyplot as plt
+
+def read_patterns(patterns_file_name):
+    with open(patterns_file_name) as patterns_file:
+        patterns = []
+        num_patterns = int(patterns_file.readline())
+        for i in range(num_patterns):
+            pattern_coords = list(map(int, patterns_file.readline().split(', ')))
+
+            # pattern_vtxes = np.flip(np.array(pattern_coords).reshape((-1, 2)), axis=1)
+            pattern_vtxes = np.array(pattern_coords).reshape((-1, 2))
+            patterns.append(pattern_vtxes)
+
+    return patterns
 
 
 def IoU(img1, img2):

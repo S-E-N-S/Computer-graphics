@@ -10,20 +10,24 @@ EPSILON = 2e-2
 def read_patterns(patterns_file_name):
     with open(patterns_file_name) as patterns_file:
         patterns = []
+        orient = []
         num_patterns = int(patterns_file.readline())
         for i in range(num_patterns):
             pattern_coords = list(map(int, patterns_file.readline().split(', ')))
 
-            pattern_vtxes = np.flip(np.array(pattern_coords).reshape((-1, 2)), axis=1)
-            # pattern_vtxes = np.array(pattern_coords).reshape((-1, 2))
+            # pattern_vtxes = np.flip(np.array(pattern_coords).reshape((-1, 2)), axis=1)
+            pattern_vtxes = np.array(pattern_coords).reshape((-1, 2))
 
             if cv2.contourArea(pattern_vtxes, True) < 0:
                 pattern_vtxes = pattern_vtxes[::-1]
                 pattern_vtxes = np.roll(pattern_vtxes, 1, 0)
+                orient.append(-1)
+            else:
+                orient.append(1)
 
             patterns.append(pattern_vtxes)
 
-    return patterns
+    return patterns, orient
 
 
 def get_polygons(image):
@@ -50,18 +54,6 @@ def get_angle(polygon, pattern):
     rotation = np.arccos(cos_angle) * 180 / np.pi
 
     return [rotation - 1, rotation, rotation + 1]
-
-
-def find_shift(polygon, pattern, scale, rotation):
-    rotation = -rotation / 180 * np.pi
-
-    x_polygon, y_polygon = polygon[0]
-    x_pattern, y_pattern = pattern[0] * scale
-
-    shift_x = x_polygon - (x_pattern * np.cos(rotation) - y_pattern * np.sin(rotation))
-    shift_y = y_polygon - (x_pattern * np.sin(rotation) + y_pattern * np.cos(rotation))
-
-    return shift_x, shift_y
 
 
 def find_max_error(polygon, pattern, scale, rotation, shift_x, shift_y):
@@ -92,7 +84,7 @@ def get_sides(figure):
     return sides
 
 
-def find_objects(patterns, polygons):
+def find_objects(patterns, polygons, orient):
     objects = []
     for polygon in polygons:
         poly_sides = get_sides(polygon)
@@ -107,31 +99,35 @@ def find_objects(patterns, polygons):
                 for _ in range(polygon_copy.shape[0]):
                     if np.linalg.norm(pattern_sides - sides) < EPSILON:
                         possible_match.append(polygon_copy.copy())
-                        break
+
                     sides = np.roll(sides, 1, 0)
                     polygon_copy = np.roll(polygon_copy, 1, 0)
 
                 scale = np.round(np.sqrt(cv2.contourArea(polygon_copy) / cv2.contourArea(pattern))).astype(int)
-                angles = np.round(get_angle(polygon_copy, pattern)).astype(int)
-
-                shift_x, shift_y = polygon_copy[0]
                 pattern_num = j
 
-                for rotation in angles:
-                    max_match_error = find_max_error(polygon_copy,
-                                                     pattern,
-                                                     scale,
-                                                     rotation,
-                                                     shift_x,
-                                                     shift_y)
-                    if max_match_error < match_error:
-                        match_error = max_match_error
-                        min_rotation = rotation
+                for match in possible_match:
+
+                    angles = - np.round(get_angle(match, pattern)).astype(int) * orient[j]
+
+                    shift_x, shift_y = match[0].copy()
+
+                    for rotation in angles:
+                        max_match_error = find_max_error(match,
+                                                         pattern,
+                                                         scale,
+                                                         rotation,
+                                                         shift_x,
+                                                         shift_y)
+                        if max_match_error < match_error:
+                            match_error = max_match_error
+                            min_rotation = rotation
+                            min_shift_x, min_shift_y = shift_x, shift_y
 
         if match_error < np.inf:
             objects.append([pattern_num,
-                            shift_x,
-                            shift_y,
+                            min_shift_x,
+                            min_shift_y,
                             scale,
                             min_rotation])
 
@@ -149,13 +145,13 @@ def main():
     # parse command line arguments
     parsed_args = parser.parse_args()
 
-    patterns = read_patterns(parsed_args.patterns_file_name)
+    patterns, orient = read_patterns(parsed_args.patterns_file_name)
 
     image = cv2.imread(parsed_args.image_name, cv2.IMREAD_GRAYSCALE)
 
     polygons = get_polygons(image)
 
-    objects = find_objects(patterns, polygons)
+    objects = find_objects(patterns, polygons, orient)
 
     outfile = sys.stdout
     if parsed_args.outfile != "":
