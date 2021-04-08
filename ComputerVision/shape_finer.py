@@ -2,6 +2,7 @@ import sys
 import argparse
 import cv2
 import numpy as np
+#from matplotlib import pyplot as plt
 
 EPSILON = 2e-2
 
@@ -29,7 +30,88 @@ def read_patterns(patterns_file_name):
     return patterns, orient
 
 
+def binarize_image(image):
+    im_cpy = image.copy()
+    im_cpy[im_cpy > 0] = 1
+    return im_cpy
+
+
+def remove_lines(image):
+    im_cpy = image.copy()
+    kernel_size = 3
+    # define line ending patterns
+    # this is needed to remove noise or separate lines
+    # we use the fact each line has the same width == 1 pixel
+    # we use the fact each polygon line has no "pure" end (the line end is the corner)
+    # so the patterns defined below can help detect extra line endings
+    # and the line ending will be always at the center of each pattern
+    ending_filters = np.array([
+        [[0, 1, 0],  # pattern 1
+         [0, 1, 0],
+         [0, 0, 0]],
+        [[0, 0, 0],  # pattern 2
+         [0, 1, 0],
+         [0, 1, 0]],
+        [[0, 0, 0],  # pattern 3
+         [1, 1, 0],
+         [0, 0, 0]],
+        [[0, 0, 0],  # and so on...
+         [0, 1, 1],
+         [0, 0, 0]],
+        [[0, 0, 1],
+         [0, 1, 0],
+         [0, 0, 0]],
+        [[0, 0, 0],
+         [0, 1, 0],
+         [1, 0, 0]],
+        [[1, 0, 0],
+         [0, 1, 0],
+         [0, 0, 0]],
+        [[0, 0, 0],
+         [0, 1, 0],
+         [0, 0, 1]],
+        [[0, 0, 0],
+         [0, 1, 0],
+         [0, 0, 0]]
+    ])
+    ax_1, ax_2 = image.shape
+    # we will remove line endings until we can't
+    not_stopped = True
+    iters, max_iters = 0, 100  # iterations limit
+    bias_to_center = kernel_size // 2  # bias to get the center of the sliding window
+    while not_stopped and iters < max_iters:
+        iters += 1
+        not_stopped = False  # stop if there will be no changes
+        for start_coord_1 in range(ax_1 - kernel_size + 1):
+            for start_coord_2 in range(ax_2 - kernel_size + 1):
+                # get current area
+                cur_area = im_cpy[start_coord_1:start_coord_1 + kernel_size,
+                                  start_coord_2:start_coord_2 + kernel_size]
+                if np.all(cur_area == 0):
+                    # optimization: don't compare not interesting areas
+                    continue
+                # check area borders
+                for f_num in range(ending_filters.shape[0]):
+                    if np.all(cur_area == ending_filters[f_num, :, :]):
+                        not_stopped = True  # change image => may try once more
+                        # matches template
+                        # erase line ending with 0
+                        im_cpy[start_coord_1 + bias_to_center,
+                               start_coord_2 + bias_to_center] = 0
+    return im_cpy
+
+
 def get_polygons(image):
+    # firstly, binarize image (all non-zero intensities will be set to 1)
+    image = binarize_image(image)
+    # remove noise and extra lines
+    image = remove_lines(image)
+    # show the result of de-noising
+    #plt.imshow(image, cmap='gray')
+    #plt.imsave("better.png", image, cmap='gray')
+    #plt.show()
+
+    # find contours on denoised image
     contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = np.array(contours)
 

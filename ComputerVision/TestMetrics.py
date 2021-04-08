@@ -1,12 +1,12 @@
 import argparse
 import numpy as np
-#from shape_finer import read_patterns
 from TestGenerator import Transform
 import cv2
 from matplotlib import pyplot as plt
 
+
 def read_patterns(patterns_file_name):
-    with open(patterns_file_name) as patterns_file:
+    with open(patterns_file_name, 'r') as patterns_file:
         patterns = []
         num_patterns = int(patterns_file.readline())
         for i in range(num_patterns):
@@ -28,7 +28,7 @@ def IoU(img1, img2):
 
 
 def read_answers(output_file):
-    with open(output_file) as file:
+    with open(output_file, 'r') as file:
         figures_params = []  # list of pairs (pattern id, Transform)
         num_figures = int(file.readline())
         for i in range(num_figures):
